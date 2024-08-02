@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Municipal Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        #chatbotToggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 140px;
+            height: 140px;
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: #48f5f5;
+            background-image: url('images/nmmc_logo.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        #chatbox {
+            position: fixed;
+            bottom: 180px;
+            right: 20px;
+            width: 480px;
+            max-width: 100%;
+            height: 680px;
+            max-height: 70%;
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            background: #fff;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 9999;
+            overflow: hidden;
+        }
+        #navbar {
+            background-color: #3379E4;
+            color: white;
+            border-radius: 10px 10px 0 0;
+            padding: 5px;
+            text-align: left;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        #navbar img {
+            height: 70px;
+            margin-left: 5px;
+        }
+        #closeButton {
+            font-size: 24px;
+            cursor: pointer;
+            color: white;
+            margin-right: 10px;
+        }
+        #messages {
+            flex-grow: 1;
+            padding: 10px;
+            overflow-y: auto;
+            display: flex;
+            background-color: #ffffff;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .message {
+            max-width: 80%;
+            padding: 8px 12px;
+            font-size: 16px;
+            margin: 5px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+        }
+        .user-message {
+            align-self: flex-end;
+            background-color: #dcf8c6;
+            justify-content: flex-end;
+        }
+        .bot-message {
+            align-self: flex-start;
+            background-color: #ffffff;
+            box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1);
+            justify-content: flex-start;
+        }
+        #inputContainer {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+        }
+        #messageInput {
+            flex: 1;
+            box-sizing: border-box;
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+            font-size: 18px;
+        }
+        #sendButton {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 50%;
+            cursor: pointer;
+            outline: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #sendButton:before {
+            content: '➤';
+            font-size: 18px;
+        }
+        .options {
+            display: flex;
+            flex-wrap: wrap;
+            background-color: #F5F4E8;
+            justify-content: center;
+            margin: 0px;
+        }
+        .option {
+            margin: 8px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            text-align: center;
+            font-size: 16px;
+            border-radius: 8px;
+        }
+        .option a {
+            text-decoration: none;
+            color: #333;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        #greetingPopup {
+            display: none;
+        }
+    </style>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+</head>
+<body>
+    <div id="chatbotToggle" onclick="toggleChatbox()">
+        <img src="https://play-lh.googleusercontent.com/YUQS44NMDInnJ5xZepHLMRGdSgzAgo0ET4pFg1ExVjQRUhQv7oa6yg0JNRY5Lm_BGJI=w600-h300-pc0xffffff-pd" alt="Navi Mumbai Municipal Corporation" style="height: 120px; width: 260px;" title="Navi Mumbai Municipal Corporation">
+    </div>
+    <div id="chatbox">
+        <div id="navbar">
+            <img src="https://www.nmmc.gov.in/navimumbai/assets/navimumbai/images/navi_mumbai_logo.png" alt="Navi Mumbai Municipal Corporation" title="Navi Mumbai Municipal Corporation">
+            <span id="closeButton">&times;</span>
+        </div>
+        <div id="Header">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTPtYui6mbLKlqMfqsN8HrYHWXBf6eclkQM6w&s" alt="Navi Mumbai Municipal Corporation" style="height: 90px; width: 100%;" title="Navi Mumbai Municipal Corporation">
+        </div>
+        <div class="options">
+            <div class="dropdown option">
+                <a href="http://example.com/online-services">Online Services</a>
+                <div class="dropdown-content">
+                    <a href="https://www.nmmc.gov.in/navimumbai/assets/251/2020/01/mediafiles/birth.pdf" target="_blank">Birth Certificate Form</a>
+                    <a href="https://www.nmmc.gov.in/navimumbai/assets/251/2018/10/mediafiles/death_certificate.pdf" target="_blank">Death Certificate Form</a>
+                    <a href="https://www.nmmc.gov.in/navimumbai/grievance" target="_blank">Complaint Registration</a>
+                    <a href="http://example.com/rti" target="_blank">Right to Information (RTI)</a>
+                    <a href="http://example.com/tender" target="_blank">Tender</a>
+                    <a href="http://example.com/application-status" target="_blank">Application Status</a>
+                    <a href="http://example.com/application-forms" target="_blank">Application Forms</a>
+                </div>
+            </div>
+            <div class="dropdown option">
+                <a href="http://example.com/quick-services" target="_blank">Quick Services</a>
+                <div class="dropdown-content">
+                    <a href="https://www.nmmc.gov.in/navimumbai/ambulance-service-providers-in-navi-mumbai" target="_blank">Ambulance</a>
+                    <a href="https://www.nmmc.gov.in/navimumbai/list-of-fire-officers-fire-stations" target="_blank">Fire Brigade</a>
+                    <a href="https://www.nmmc.gov.in/navimumbai/list-of-hospitals" target="_blank">Hospitals</a>
+                    <a href="http://example.com/police-stations" target="_blank">Police Stations</a>
+                    <a href="http://example.com/blood-bank" target="_blank">Blood Bank</a>
+                    <a href="https://www.nmmc.gov.in/navimumbai/albums" target="_blank">24/7 Chemist</a>
+                </div>
+            </div>
+            <div class="dropdown option">
+                <a href="http://example.com/online-processes" target="_blank">Online Processes</a>
+                <div class="dropdown-content">
+                    <a href="https://www.nmmc.gov.in/web/10156/70" target="_blank">Property & Water Tax Online</a>
+                    <a href="https://www.nmmc.gov.in/navimumbai/solid-waste-management" target="_blank">Solid Waste</a>
+                    <a href="http://example.com/public-disclosure-law" target="_blank">Public Disclosure Law</a>
+                    <a href="http://example.com/ongoing-project" target="_blank">Ongoing Project</a>
+                </div>
+            </div>
+            <div class="option"><a href="http://example.com/feedback-contact-us" target="_blank">Feedback & Contact Us</a></div>
+        </div>
+        <div id="messages" onwheel="this.scrollBy(0, event.deltaY);"></div>
+        <div id="inputContainer">
+            <input id="messageInput" type="text" placeholder="Type your message here...">
+            <button id="sendButton" onclick="sendMessage()"></button>
+        </div>            
+    </div>
+    <div id="greetingPopup">Hello User! How can I help?</div>
+    <script>
+        const socket = io();
+        let language = 'en'; // Default language is English
+
+        function toggleChatbox() {
+            const chatbox = document.getElementById('chatbox');
+            chatbox.style.display = chatbox.style.display === 'none' ? 'flex' : 'none';
+            if (chatbox.style.display === 'flex') {
+                document.getElementById('messageInput').focus();
+            }
+        }
+
+        document.getElementById('closeButton').addEventListener('click', function() {
+            const chatbox = document.getElementById('chatbox');
+            chatbox.style.display = 'none';
+        });
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (message) {
+                addMessage('You', message, 'user-message');
+                socket.emit('message', message);
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        document.getElementById('messageInput').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        socket.on('response', function(response) {
+            const formattedResponse = replacePdfLinks(response);
+            addMessage('Bot', formattedResponse, 'bot-message');
+        });
+
+        function addMessage(sender, message, messageClass) {
+            const messagesDiv = document.getElementById('messages');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', messageClass);
+
+            if (sender === 'Bot') {
+                messageElement.innerHTML = `<img src="https://www.nmmc.gov.in/navimumbai/assets/251/2018/11/mediafiles/index.jpg" style="width: 30px; height: 30px; border-radius: 50%; margin-right: 8px;"> ${formatMessage(message)}`;
+            } else {
+                messageElement.innerHTML = `<strong>${sender}:</strong> ${formatMessage(message)}`;
+            }
+
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function formatMessage(message) {
+            const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+            return message.replace(urlPattern, function(url) {
+                return `<a href="${url}" target="_blank">${url}</a>`;
+            });
+        }
+
+        function replacePdfLinks(message) {
+            const pdfLinkPattern = /(https?:\/\/.*\.pdf)/gi;
+            return message.replace(pdfLinkPattern, function(match, url) {
+                return `<a href="${url}" target="_blank">Link to PDF</a>`;
+            });
+        }
+
+        function typeMessage(element, message, delay = 100) {
+            let i = 0;
+            function type() {
+                if (i < message.length) {
+                    element.innerHTML += message.charAt(i);
+                    i++;
+                    setTimeout(type, delay);
+                }
+            }
+            type();
+        }
+
+        window.onload = function() {
+            setTimeout(() => {
+                const chatbox = document.getElementById('chatbox');
+                chatbox.style.display = 'flex';
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message', 'bot-message');
+                messageElement.innerHTML = `<strong>Bot:</strong> `;
+                document.getElementById('messages').appendChild(messageElement);
+                typeMessage(messageElement, 'Hello User! How can I help?', 50);
+            }, 5000);
+        };
+
+        function toggleLanguage() {
+            language = language === 'en' ? 'mr' : 'en';
+            updateLanguage();
+        }
+
+        function updateLanguage() {
+            const elementsToTranslate = document.querySelectorAll('[data-en], [data-mr]');
+            elementsToTranslate.forEach(element => {
+                if (language === 'en') {
+                    element.innerHTML = element.getAttribute('data-en');
+                } else {
+                    element.innerHTML = element.getAttribute('data-mr');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
