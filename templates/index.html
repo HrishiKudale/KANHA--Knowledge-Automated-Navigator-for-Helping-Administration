@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Municipal Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        #chatbotToggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 180px;
+            height: 180px;
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: #48f5f5;
+            background-image: url('images/nmmc_logo.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        #chatbox {
+            position: fixed;
+            bottom: 210px;
+            right: 20px;
+            width: 520px;
+            max-width: 100%;
+            height: 740px;
+            max-height: 70%;
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            background: #fff;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 9999;
+            overflow: hidden;
+        }
+        #navbar {
+            background-color: #3379E4;
+            color: white;
+            border-radius: 10px 10px 0 0;
+            padding: 5px;
+            text-align: left;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        #navbar img {
+            height: 70px;
+            margin-left: 5px;
+        }
+        #closeButton {
+            font-size: 24px;
+            cursor: pointer;
+            color: white;
+            margin-right: 10px;
+        }
+        #suggestionsBox {
+            display: none;
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ccc;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: scroll; /* Enable scrolling */
+            z-index: 1000;
+            margin-bottom: 20px;
+            scrollbar-width: none; 
+            -ms-overflow-style: none; 
+        }
+
+        #suggestionsBox::-webkit-scrollbar {
+             display: none; 
+        }
+
+
+
+        .suggestion-item {
+            padding: 8px;
+            cursor: pointer;
+        }
+
+        .suggestion-item:hover {
+            background-color: #f0f0f0;
+        }
+        #messages {
+            flex-grow: 1;
+            padding: 10px;
+            overflow-y: auto; 
+            display: flex;
+            background-color: #ffffff;
+            flex-direction: column;
+            gap: 15px;
+    
+         /* Hide the scrollbar */
+            -ms-overflow-style: none; /* For Internet Explorer */
+             scrollbar-width: none; /* For Firefox */
+        }
+
+        #messages::-webkit-scrollbar {
+             display: none; 
+        }
+        .message {
+            background-color: #f7f2f2; 
+            max-width: 80%;
+            padding: 8px 12px;
+            font-size: 16px;
+            margin:0; /* Add spacing between messages */
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+        }
+        .user-message {
+            align-self: flex-end;
+            background-color: #dcf8c6;
+            justify-content: flex-end;
+        }
+        .bot-message {
+            align-self: flex-start;
+            background-color: #f7f2f2;
+            box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1);
+            justify-content: flex-start;
+        }
+        #inputContainer {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            position: relative;
+        }
+        #messageInput {
+            flex: 1;
+            box-sizing: border-box;
+            padding: 14px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+            font-size: 18px;
+            width: 100%;
+        }
+        #sendButton {
+            width: 44px;
+            height: 44px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 50%;
+            cursor: pointer;
+            outline: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #sendButton:before {
+            content: '➤';
+            font-size: 20px;
+        }
+        .options {
+            display: flex;
+            flex-wrap: wrap;
+            background-color: #F5F4E8;
+            justify-content: center;
+            margin: 0px;
+        }
+        .option {
+            margin: 8px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            text-align: center;
+            font-size: 18px;
+            border-radius: 8px;
+        }
+        .option a {
+            text-decoration: none;
+            color: #333;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        
+        #greetingPopup {
+            display: none;
+        }
+
+        .proceed-button {
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .proceed-button:hover {
+            background-color: #0056b3;
+        }
+        .restart-button {
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #28a745; 
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .restart-button:hover {
+            background-color: #218838; 
+        }
+
+        .update-container {
+           display: flex;
+           align-items: center;
+           justify-content: center; /* Center the flashing text */
+           font-size: 18px;
+           font-weight: bold;
+           color: #ff0000;
+           width: 100%; 
+           box-sizing: border-box; 
+           padding: 14px; 
+           background-color: #ffeaea; 
+           border-radius: 5px; 
+           margin-bottom: 0px; /* Add space below the update container */
+           margin-top:0px;
+        }
+
+        .flashing-update {
+           animation: blink 1s step-start 0s infinite;
+           color: #ff0000;
+           font-weight: bold;
+           font-size: 16px;
+           text-align: center;
+           flex-grow: 1; 
+           margin: 0; 
+        }
+
+        .proceed-button {
+           padding: 10px 15px;
+           font-size: 16px;
+           background-color: #007bff;
+           color: white;
+           border: none;
+           border-radius: 5px;
+           cursor: pointer;
+           margin-top: 10px;
+        }
+
+        .proceed-button:hover {
+           background-color: #0056b3;
+        }
+
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+
+
+</style>
+<script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+</head>
+<body>
+
+
+
+
+    <div id="chatbotToggle" onclick="toggleChatbox()">
+        <img src="https://play-lh.googleusercontent.com/YUQS44NMDInnJ5xZepHLMRGdSgzAgo0ET4pFg1ExVjQRUhQv7oa6yg0JNRY5Lm_BGJI=w600-h300-pc0xffffff-pd" alt="Navi Mumbai Municipal Corporation" style="height: 150px; width: 290px;" title="Navi Mumbai Municipal Corporation">
+    </div>
+    <div id="chatbox">
+        <div id="navbar">
+            <img src="https://www.nmmc.gov.in/navimumbai/assets/navimumbai/images/navi_mumbai_logo.png" alt="Navi Mumbai Municipal Corporation" title="Navi Mumbai Municipal Corporation">
+            <span id="closeButton">&times;</span>
+        </div>
+        <div id="Header">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTPtYui6mbLKlqMfqsN8HrYHWXBf6eclkQM6w&s" alt="Navi Mumbai Municipal Corporation" style="height: 100px; width: 100%;" title="Navi Mumbai Municipal Corporation">
+        </div>
+        <div class="options">
+            <div class="dropdown option">
+                <a href="http://example.com/online-services">Online Services</a>
+                <div class="dropdown-content">
+                    <a href="https://www.nmmc.gov.in/navimumbai/assets/251/2020/01/mediafiles/birth.pdf" target="_blank">Birth Certificate Form</a>
+                    <a href="https://www.nmmc.gov.in/navimumbai/assets/251/2018/10/mediafiles/death_certificate.pdf" target="_blank">Death Certificate Form</a>
+                    <a href="https://www.nmmc.gov.in/navimumbai/grievance" target="_blank">Complaint Registration</a>
+                    <a href="http://example.com/rti" target="_blank">Right to Information (RTI)</a>
+                    <a href="http://example.com/tender" target="_blank">Tender</a>
+                    <a href="http://example.com/application-status" target="_blank">Application Status</a>
+                    <a href="http://example.com/application-forms" target="_blank">Application Forms</a>
+                </div>
+            </div>
+            <div class="dropdown option">
+                <a href="http://example.com/quick-services" target="_blank">Quick Services</a>
+                <div class="dropdown-content">
+                    <a href="https://www.nmmc.gov.in/navimumbai/ambulance-service-providers-in-navi-mumbai" target="_blank">Ambulance</a>
+                    <a href="https://www.nmmc.gov.in/navimumbai/list-of-fire-officers-fire-stations" target="_blank">Fire Brigade</a>
+                    <a href="https://www.nmmc.gov.in/navimumbai/list-of-hospitals" target="_blank">Hospitals</a>
+                    <a href="http://example.com/police-stations" target="_blank">Police Stations</a>
+                    <a href="http://example.com/blood-bank" target="_blank">Blood Bank</a>
+                    <a href="https://www.nmmc.gov.in/navimumbai/albums" target="_blank">24/7 Chemist</a>
+                </div>
+            </div>
+            <div class="dropdown option">
+                <a href="http://example.com/online-processes" target="_blank">Online Processes</a>
+                <div class="dropdown-content">
+                    <a href="https://www.nmmc.gov.in/web/10156/70" target="_blank">Property & Water Tax Online</a>
+                    <a href="https://www.nmmc.gov.in/navimumbai/solid-waste-management" target="_blank">Solid Waste</a>
+                    <a href="http://example.com/public-disclosure-law" target="_blank">Public Disclosure Law</a>
+                    <a href="http://example.com/ongoing-project" target="_blank">Ongoing Project</a>
+                </div>
+            </div>
+            <div class="option"><a href="http://example.com/feedback-contact-us" target="_blank">Feedback & Contact Us</a></div>
+        </div>
+        <div id="messages" onwheel="this.scrollBy(0, event.deltaY);"></div>
+        
+        <div id="inputContainer" style="position: relative;">
+            <div id="suggestionsBox" style="display: none; position: absolute; background-color: white; border: 1px solid #ccc; width: 100%; max-height: 200px; overflow-y: auto; z-index: 1000; bottom: 65%; top: auto;">
+                <div id="suggestionsHeader" style="font-weight: bold; padding: 10px; background-color: #f7f7f7; border-bottom: 1px solid #ccc;">
+                    Auto Suggestions</div>
+            </div>
+            
+            <input id="messageInput" type="text" placeholder="Type your message here...">
+            <button id="sendButton" onclick="sendMessage()"></button>
+        </div>            
+    </div>
+    
+    <script>
+        const socket = io();
+
+
+        const steps = [
+    "Welcome! Please proceed with the steps to register your industrial license",
+    "Step 1: Register on the portal using your credentials.",
+    "Step 2: Navigate to the Industrial License section.",
+    "Step 3: Fill out the required details in the application form.",
+    "Step 4: Upload the necessary documents.: Property Tax, Water Bill, Occupancy Certificate, Affidavit on Rs.500 Stamp-paper, Other Relevant Documents   ",
+    "Step 5: Pay the application fees online.",
+    "Step 6: Submit your application and await confirmation."
+
+];
+     // New array for suggestions
+     const questions = [
+    "What are the steps for obtaining a new factory license in Navi Mumbai?",
+    "Where can I find the Factory New License Form?",
+    "What is the process for obtaining a new factory license in Navi Mumbai?",
+    "How can I renew my factory license online?",
+    "What documents are required for a new factory license application?",
+    "What is the procedure for name change on an existing factory license?",
+    "How do I transfer owner or partner details in my factory license?",
+    "How can I cancel my factory license?",
+    "Why am I receiving an outdated renewal notice for my factory license?",
+    "What are the fees for factory license registration and renewal?",
+    "How can I track the status of my factory license application?",
+    "What should I do if my factory license application is rejected?",
+    "What is the role of Aadhaar authentication in factory license applications?",
+    "How do I resubmit documents for my factory license application if they were incomplete?",
+    "What happens during a site inspection for a factory license?",
+    "How can I make payments for my factory license online?",
+    "What is the validity period of a factory license issued by NMMC?",
+    "What should I do if my payment for a factory license fails?",
+    "Can I download my factory license after approval?",
+    "What is the process for resolving legal objections or disputes regarding factory licenses?",
+    "What happens if I do not comply with regulatory requirements for a factory license?",
+    "How can I access real-time updates on my factory license application?"
+];
+
+       
+
+let currentStep = 0;
+
+function loadFlashingUpdate() {
+
+    
+    const messages = document.getElementById('messages'); // The chatbot messages container
+
+    if (messages) {
+        messages.innerHTML = ''; // Clear any existing content
+
+        // Create the update container
+        const updateContainer = document.createElement('div');
+        updateContainer.className = 'update-container';
+
+        // Create the flashing update message as a clickable link
+        const updateMessage = document.createElement('div');
+        updateMessage.className = 'flashing-update';
+
+        const updateLink = document.createElement('a');
+        updateLink.href = "#"; // Link doesn't need to go anywhere, just a placeholder
+        updateLink.innerHTML = `🚨 Updates: Click here to apply for New Factory License`;
+
+
+        // Styling the link directly in JavaScript (if you want to avoid using CSS)
+        updateLink.style.color = 'red'; // Red color
+        updateLink.style.textDecoration = 'none'; // No underline
+
+        updateLink.addEventListener('click', function () {
+            // Clear all existing messages, including "Hello User! How can I help?"
+            messages.innerHTML = ''});
+
+    
+        updateLink.addEventListener('click', function() {
+            // When clicked, show the Proceed button
+            const proceedButton = document.createElement('button');
+            proceedButton.className = 'proceed-button';
+            proceedButton.textContent = 'Proceed';
+            proceedButton.onclick = loadStep; // Proceed to Step 1
+            messages.appendChild(proceedButton); // Append the button to messages
+
+            // Remove the link after it's clicked
+            updateMessage.innerHTML = "Proceed to Continue!";
+            messages.appendChild(updateMessage); // Append the updated message
+        });
+
+        updateMessage.appendChild(updateLink); // Append the link to the updateMessage
+        updateContainer.appendChild(updateMessage); // Append the message to the container
+        messages.appendChild(updateContainer); // Append the container to the messages section
+    } else {
+        console.error('Messages container not found.');
+    }
+}
+
+
+function showSuggestions() {
+    const input = document.getElementById("messageInput").value; // Get user input
+    const suggestionsBox = document.getElementById("suggestionsBox"); // Box to show suggestions
+
+    if (input.trim().length === 0) {
+        suggestionsBox.style.display = "none"; // Hide suggestions if input is empty
+        return;
+    }
+
+    // Filter questions that match the user input
+    const filteredSuggestions = questions.filter(question =>
+        question.toLowerCase().includes(input.toLowerCase())
+    );
+
+    if (filteredSuggestions.length > 0) {
+        // Create a list of suggestions and include the "Auto Suggestions" heading
+        const suggestionsList = filteredSuggestions
+            .map(suggestion => `<div class="suggestion-item">${suggestion}</div>`)
+            .join('');
+
+        // Set the suggestions inside the box
+        suggestionsBox.innerHTML = `
+            <div id="suggestionsHeader" style="font-weight: bold; padding: 10px; background-color: #f7f7f7; border-bottom: 1px solid #ccc;">
+                Auto Suggestions
+            </div>
+            </div>
+            <div id="suggestionsContent" style="max-height: 200px; overflow-y: auto;">
+                ${suggestionsList}
+            </div>
+        `;
+
+        suggestionsBox.style.display = "block"; // Show suggestions box
+    } else {
+        suggestionsBox.style.display = "none"; // Hide suggestions if no matches
+    }
+
+    // Add click event for suggestions
+    document.querySelectorAll(".suggestion-item").forEach(item => {
+        item.addEventListener("click", function () {
+            document.getElementById("messageInput").value = this.innerText; // Set input to clicked suggestion
+            suggestionsBox.style.display = "none"; // Hide suggestions box after selection
+        });
+    });
+}
+
+
+
+function loadStep() {
+    const messages = document.getElementById('messages');
+
+    if (messages) {
+        messages.innerHTML = ''; // Clear the flashing update
+
+        // Add Step 1 content
+        const stepMessage = document.createElement('div');
+        stepMessage.className = 'message bot-message';
+        stepMessage.textContent = 'Step 1: Follow the instructions to proceed.';
+        messages.appendChild(stepMessage);
+    }
+}
+
+// Initialize the chatbot with the flashing update
+window.onload = function () {
+    setTimeout(() => {
+        const chatbox = document.getElementById('chatbox');
+        chatbox.style.display = 'flex';
+        loadFlashingUpdate(); // Display the flashing update first
+    }, 3000);
+};
+
+
+
+
+        let language = 'en'; // Default language is English
+
+        function toggleChatbox() {
+    const chatbox = document.getElementById('chatbox');
+    const isChatboxVisible = chatbox.style.display === 'flex';
+    chatbox.style.display = isChatboxVisible ? 'none' : 'flex';
+
+    if (!isChatboxVisible) {
+        document.getElementById('messageInput').focus();
+        loadFlashingUpdate(); // Ensure the flashing update is displayed when chatbox opens
+    }
+}
+
+
+        document.getElementById('closeButton').addEventListener('click', function() {
+            const chatbox = document.getElementById('chatbox');
+            chatbox.style.display = 'none';
+        });
+    function loadStep() {
+            const messages = document.getElementById('messages');
+            messages.innerHTML = ''; // Clear previous messages
+            const stepMessage = document.createElement('div');
+            stepMessage.className = 'message bot-message';
+            stepMessage.textContent = steps[currentStep];
+            messages.appendChild(stepMessage);
+
+            // Add a Proceed button
+            const proceedButton = document.createElement('button');
+            proceedButton.className = 'proceed-button';
+            proceedButton.textContent = 'Proceed';
+            proceedButton.onclick = proceedToNextStep;
+            messages.appendChild(proceedButton);
+    }
+
+    function proceedToNextStep() {
+    if (currentStep < steps.length - 1) {
+        currentStep++;
+        loadStep();
+    } else {
+        // Show the final message
+        const messages = document.getElementById('messages');
+        const finalMessage = document.createElement('div');
+        finalMessage.className = 'message bot-message';
+        finalMessage.textContent = "Congratulations! You have completed all steps to get your industrial license.";
+        messages.innerHTML = ''; // Clear previous messages
+        messages.appendChild(finalMessage);
+
+        // Add the Restart button
+        const restartButton = document.createElement('button');
+        restartButton.className = 'restart-button';  
+        restartButton.textContent = 'Restart Process';
+        restartButton.onclick = restartProcess;  
+        messages.appendChild(restartButton);
+    }
+}
+
+    function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (message) {
+                addMessage('You', message, 'user-message');
+                socket.emit('message', message);
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        document.getElementById('messageInput').addEventListener('keydown', function(event) {
+            showSuggestions(); // Show suggestions on each keystroke
+           
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+    });
+
+
+
+        socket.on('response', function(response) {
+            const formattedResponse = replacePdfLinks(response);
+            const lowerResponse = response.toLowerCase();
+
+            if (response.trim().toLowerCase() === 'start industrial steps') {
+            currentStep = 0; // Reset steps
+            loadStep(); // Show the first step
+           } else {
+               const formattedResponse = replacePdfLinks(response);
+               addMessage('Bot', formattedResponse, 'bot-message');
+}
+
+        });
+
+    function addMessage(sender, message, messageClass) {
+            const messagesDiv = document.getElementById('messages');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', messageClass);
+
+            if (sender === 'Bot') {
+                messageElement.innerHTML = `<img src="https://www.nmmc.gov.in/navimumbai/assets/251/2018/11/mediafiles/index.jpg" style="width: 30px; height: 30px; border-radius: 50%; margin-right: 8px;"> ${formatMessage(message)}`;
+            } else {
+                messageElement.innerHTML = `<strong>${sender}:</strong> ${formatMessage(message)}`;
+            }
+
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function formatMessage(message) {
+            const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+            return message.replace(urlPattern, function(url) {
+                return `<a href="${url}" target="_blank">${url}</a>`;
+            });
+        }
+
+        function replacePdfLinks(message) {
+            const pdfLinkPattern = /(https?:\/\/.*\.pdf)/gi;
+            return message.replace(pdfLinkPattern, function(match, url) {
+                return `<a href="${url}" target="_blank">Link to PDF</a>`;
+            });
+        }
+
+    function typeMessage(element, message, delay = 50) {
+    let i = 0;
+    function type() {
+        if (i < message.length) {
+            // Check for <br> tag and handle it as a block
+            if (message.substring(i, i + 4) === '<br>') {
+                element.innerHTML += '<br>';
+                i += 4; // Skip over <br>
+            } else {
+                element.innerHTML += message.charAt(i);
+                i++;
+            }
+            setTimeout(type, delay);
+        }
+    }
+    type();
+}
+
+
+
+function loadStep() {
+    const messages = document.getElementById('messages');
+    messages.innerHTML = ''; // Clear previous messages
+    const stepMessage = document.createElement('div');
+    stepMessage.className = 'message bot-message';
+    stepMessage.textContent = steps[currentStep];
+    messages.appendChild(stepMessage);
+
+    // Add a Proceed button
+    const proceedButton = document.createElement('button');
+    proceedButton.className = 'proceed-button';
+    proceedButton.textContent = 'Proceed';
+    proceedButton.style.marginTop = '10px';
+    proceedButton.onclick = proceedToNextStep;
+    messages.appendChild(proceedButton);
+}
+
+function proceedToNextStep() {
+    if (currentStep < steps.length - 1) {
+        currentStep++;
+        loadStep();
+    } else {
+        const messages = document.getElementById('messages');
+        const finalMessage = document.createElement('div');
+        finalMessage.className = 'message bot-message';
+        finalMessage.textContent =
+            "Congratulations! You have completed all steps to get your industrial license.";
+        messages.innerHTML = ''; // Clear previous messages
+        messages.appendChild(finalMessage);
+
+        // Add the Restart button
+        const restartButton = document.createElement('button');
+        restartButton.className = 'restart-button'; // Apply the restart button class for styling
+        restartButton.textContent = 'Restart Process';
+        restartButton.onclick = restartProcess; // Bind the restart function
+        messages.appendChild(restartButton);
+    }
+}
+
+function restartProcess() {
+    currentStep = 0; // Reset to the first step
+    const messages = document.getElementById('messages');
+    messages.innerHTML = ''; // Clear previous messages
+
+    // Reload the flashing update and initial messages
+    loadFlashingUpdate();
+    setTimeout(() => {
+        showInitialMessages();
+    }, 3000); // Delay for flashing update effect
+}
+// Helper function to show initial messages
+function showInitialMessages() {
+    // First Message: "Hello User! How can I help?"
+    const firstMessageElement = document.createElement('div');
+    firstMessageElement.classList.add('message', 'bot-message');
+    firstMessageElement.innerHTML = `
+        <div style="display: flex; align-items: center; background-color: #f7f7f7; padding: 5px; border-radius: 5px;">
+            <img src="https://www.nmmc.gov.in/navimumbai/assets/251/2018/11/mediafiles/index.jpg" 
+                 style="width: 30px; height: 30px; border-radius: 50%; margin-right: 8px;">
+            <div><strong></strong></div>
+        </div>
+    `;
+    document.getElementById('messages').appendChild(firstMessageElement);
+    typeMessage(firstMessageElement, 'Hello User! How can I help?', 50);
+
+    // Second Message: List of Options
+    setTimeout(() => {
+        const secondMessageElement = document.createElement('div');
+        secondMessageElement.classList.add('message', 'bot-message');
+        secondMessageElement.style.backgroundColor = '#f7f7f7'; // Light gray background
+        secondMessageElement.style.padding = '10px'; // Padding for better aesthetics
+        secondMessageElement.style.borderRadius = '5px'; // Rounded corners
+        secondMessageElement.style.marginTop = '5px'; // Reduce space between messages
+        secondMessageElement.innerHTML = `Recommended Services:<br>1. New Factory License<br>2. Factory License Renewal<br>3. Factory License Owner/ Partner Count Change<br>4. Factory/Storage License - Name Change<br>5. Cancellation of Factory License<br>6. Outdated Renewal Notice of Factory License`;
+        document.getElementById('messages').appendChild(secondMessageElement);
+    }, 3000);
+}
+
+// Trigger initial messages on page load
+window.onload = function () {
+    setTimeout(() => {
+        const chatbox = document.getElementById('chatbox');
+        chatbox.style.display = 'flex';
+        loadFlashingUpdate(); // Display the flashing update first
+        showInitialMessages(); // Show initial chatbot messages
+    }, 3000);
+};
+
+
+
+        function toggleLanguage() {
+            language = language === 'en' ? 'mr' : 'en';
+            updateLanguage();
+        }
+
+        function updateLanguage() {
+            const elementsToTranslate = document.querySelectorAll('[data-en], [data-mr]');
+            elementsToTranslate.forEach(element => {
+                if (language === 'en') {
+                    element.innerHTML = element.getAttribute('data-en');
+                } else {
+                    element.innerHTML = element.getAttribute('data-mr');
+                }
+            });
+        }
+
+        
+                
+
+        // Function to process the user query
+    function handleUserQuery(userQuery) {
+        // Keywords to activate the Proceed button
+        const keywords = ["industry", "factory", "license"];
+        const lowerQuery = userQuery.toLowerCase();
+
+        // Check if the query contains any keyword
+        const isRelevantQuery = keywords.some(keyword => lowerQuery.includes(keyword));
+
+        if (isRelevantQuery) {
+            // Display Step 1 and activate Proceed button
+            document.getElementById("responseText").textContent = "Step 1: Visit the official NMMC portal.";
+            document.getElementById("proceedButton").style.display = "inline-block";
+        } else {
+            // Handle irrelevant queries (optional)
+            document.getElementById("responseText").textContent = "Please ask a relevant question about industry or factory licenses.";
+            document.getElementById("proceedButton").style.display = "none";
+        }
+    }
+
+
+
+ </script>
+
+    
+</body>
+</html>
+
